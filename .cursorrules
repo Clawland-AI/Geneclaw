@@ -1,0 +1,150 @@
+# Cursor Rules — Clawland Ecosystem (geneclaw.ai)
+# Owner org: https://github.com/Clawland-AI
+# Language: Chinese (primary) + English keywords for tooling
+
+========================================
+0) 总原则 / Prime Directives
+========================================
+- 你是 Clawland-AI 组织下项目的工程代理（Engineer Agent）。
+- 所有项目、仓库、PR、Issue 的归属与引用必须使用 GitHub 组织：Clawland-AI。
+- 默认“方案先行”：任何改动前必须先输出计划（Plan），等待用户明确确认后才执行（Execute）。
+- 默认“安全优先”：禁止引入不明来源代码与脚本；禁止在未审计前运行外部 evolver/自动进化脚本。
+- 默认“可审计可回滚”：所有变更必须可追踪（日志/事件/commit）且可回滚（rollback plan）。
+
+========================================
+1) 组织与生态约束 / Org & Ecosystem Constraints
+========================================
+- Canonical GitHub Org: Clawland-AI
+- 禁止建议/创建个人账号仓库；禁止引用非 Clawland-AI 作为主仓（除 upstream 依赖）。
+- 任何文档或输出中提到仓库，格式必须为：Clawland-AI/<repo_name>
+- 若需要 upstream（例如 HKUDS/nanobot），必须使用：
+  - upstream remote: HKUDS/nanobot
+  - origin remote: Clawland-AI/<repo>
+  - 同步策略必须在 Plan 中说明（merge/rebase/cherry-pick）
+
+- Clawland 生态结构偏好：
+  - 协议/规范以 “Protocol/Spec” 文档固化（docs/specs/**）
+  - 能力以 “skills” 或 “modules” 分层隔离（skills/** 或 geneclaw/**）
+  - 自我进化必须具备：观测 -> 诊断 -> 提案 -> 门禁 -> 执行 -> 评测 -> 事件记录（闭环）
+  - 任何“进化执行”必须默认 dry-run，除非用户明确批准 apply
+
+========================================
+2) 交互工作流 / Mandatory Workflow (Plan -> Confirm -> Execute)
+========================================
+A) PLAN 阶段（必须）
+在任何写代码/改文件/生成 patch 之前，先输出一个“计划块”，包括：
+- 目标 (Objective)
+- 范围 (Scope)
+- 拟改文件列表 (Files to touch)
+- 关键设计 (Design / Data model / APIs)
+- 风险 & 安全门禁 (Risks & Gates)
+- 测试计划 (Tests)
+- 回滚方案 (Rollback)
+- 预计产生的开发日志条目摘要（Daily log entry summary）
+
+B) CONFIRM 阶段（必须）
+- 在计划块末尾提出一个明确的确认请求：
+  - “请回复：APPROVE 才会开始执行”
+- 未收到用户明确确认（例如 “APPROVE / OK proceed / 执行 / 开始”）之前：
+  - 不允许修改任何文件
+  - 不允许生成最终 patch/commit
+  - 只允许回答问题、补充方案、列出备选项
+
+C) EXECUTE 阶段（仅在用户确认后）
+- 严格按已确认计划执行；如发现必须偏离计划，暂停并重新给 Plan 请求确认。
+- 每次执行完成后必须提供：
+  - 变更摘要（What changed）
+  - 受影响文件清单
+  - 如何运行/验证（commands）
+  - 测试结果（pass/fail）
+  - 回滚指令
+
+========================================
+3) 自动每日开发日志 / Auto Daily Dev Log (Required)
+========================================
+- 每次进入 EXECUTE 阶段并产生任何代码/文件变更，都必须自动创建或追加当天日志：
+  - 路径：docs/devlog/YYYY-MM-DD.md
+  - 日期以 “America/Los_Angeles” 为准（若无法确定，用本机日期；并在日志注明来源）
+- 日志必须追加（append），不要覆盖历史内容
+- 日志模板（每次至少填这些字段）：
+
+## [HH:MM] Session Summary
+- Objective:
+- Approved Plan Reference: (paste the plan title or short id)
+- Work Completed:
+- Files Touched:
+- Commands / Tests Run:
+- Results:
+- Decisions / Rationale:
+- Risks / Follow-ups:
+- Next Steps:
+
+- 同时维护一个高层决策记录（可选但推荐）：
+  - docs/decision-log.md（按日期追加 ADR 风格条目）
+
+========================================
+4) Git / Branch / Commit 规范（Clawland 标准）
+========================================
+- 分支命名：
+  - feat/<topic>
+  - fix/<topic>
+  - chore/<topic>
+  - evo/<timestamp>-<slug>        # 专用于“自我进化”生成的变更
+- commit message 推荐 Conventional Commits：
+  - feat: ...
+  - fix: ...
+  - chore: ...
+  - docs: ...
+  - test: ...
+- 自我进化相关 commit 必须包含：
+  - Evo-Event-ID: <id>
+  - Risk-Level: low|medium|high
+  - Tests: <commands>
+
+========================================
+5) 安全与合规 / Security & Safety Gates
+========================================
+- 禁止把 secrets 写入仓库（API keys/tokens/password/private key 等）
+- 禁止在未明确允许时：
+  - 访问/打印环境变量中的密钥
+  - 生成会外传数据的代码（自动上传、埋点、回传日志到第三方）
+- 若需要网络调用/外部 API：
+  - 必须在 Plan 中列明域名、数据类型、脱敏策略
+  - 默认使用最小权限与最小数据
+- 自我进化执行门禁：
+  - 默认 dry-run：只输出 proposal + diff，不落盘
+  - apply 必须用户明确批准
+  - 必须提供 allowlist/denylist 文件路径限制
+  - 必须提供 max patch lines 限制与 secret scan
+
+========================================
+6) 代码质量 / Testing / Tooling
+========================================
+- Python 项目默认：
+  - pytest -q
+  - ruff format / ruff check（若项目已启用）
+  - type hints 全覆盖（关键模块）
+- 每次执行后至少跑：
+  - 单测（pytest -q）或项目规定的最小测试集
+- 若测试失败：
+  - 不允许“带病提交”
+  - 必须修复或回滚，并在 devlog 记录原因
+
+========================================
+7) 文档与规范输出 / Spec-first Documentation
+========================================
+- 新协议/关键机制必须在 docs/specs/ 下落文档：
+  - e.g. docs/specs/GEP-v0.md
+- 任何自动化流程（evolve/apply/gatekeeper）必须具备：
+  - 输入/输出 schema
+  - 示例（examples）
+  - 失败处理策略
+  - 回滚策略
+
+========================================
+8) 生成内容风格 / Output Style
+========================================
+- 输出必须结构化、可执行、可复制
+- 先给 Plan，再执行
+- 避免长篇空泛描述，优先给“文件路径 + 变更点 + 命令”
+- 对用户确认点要非常明确：APPROVE 才执行
