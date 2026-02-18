@@ -1,10 +1,17 @@
 <div align="center">
-  <h1>Geneclaw — Self-Evolving AI Agent Framework</h1>
+  <h1>🧬 Geneclaw — Self-Evolving AI Agent Framework</h1>
   <p>
+    <a href="https://geneclaw.ai"><img src="https://img.shields.io/badge/🌐_Website-geneclaw.ai-blueviolet" alt="Website"></a>
     <img src="https://img.shields.io/badge/python-≥3.11-blue" alt="Python">
     <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
     <img src="https://img.shields.io/badge/GEP-v0.1.0-orange" alt="GEP Version">
     <img src="https://img.shields.io/badge/upstream-HKUDS%2Fnanobot-lightgrey" alt="Upstream">
+  </p>
+  <p>
+    <strong><a href="https://geneclaw.ai">geneclaw.ai</a></strong> · 
+    <a href="https://github.com/Clawland-AI/Geneclaw">GitHub</a> · 
+    <a href="docs/specs/GEP-v0.md">Protocol Spec</a> · 
+    <a href="docs/quickstart/Geneclaw-Runbook.md">Quickstart</a>
   </p>
   <p><em>Built on <a href="https://github.com/HKUDS/nanobot">nanobot</a> — adds closed-loop self-improvement via the Geneclaw Evolution Protocol (GEP)</em></p>
 </div>
@@ -14,6 +21,8 @@
 **Geneclaw** extends the ultra-lightweight [nanobot](https://github.com/HKUDS/nanobot) AI agent with a **self-evolution engine** — enabling the agent to observe its own failures, diagnose root causes, propose constrained fixes, and safely apply them behind a multi-layered gatekeeper.
 
 **Everything is dry-run by default. Nothing is applied without explicit human approval.**
+
+> 📖 Visit **[geneclaw.ai](https://geneclaw.ai)** for documentation, demos, and community resources.
 
 ## Key Capabilities
 
@@ -25,7 +34,8 @@
 | **Gatekeeper** | 5-layer safety validation (allowlist, denylist, diff size, secret scan, code pattern detection) |
 | **Safe Apply** | Git-branched patch application with automated test execution and rollback on failure |
 | **Autopilot** | Configurable multi-cycle evolution loop with risk-based auto-approve |
-| **Benchmarks** | Pipeline performance measurement with synthetic workloads |
+| **Dashboard** | Read-only Streamlit web dashboard for evolution audit, timeline, and benchmark visualisation |
+| **Benchmarks** | Pipeline performance measurement with synthetic workloads and JSONL persistence |
 | **Event Store** | Append-only evolution lifecycle logging with secret redaction |
 | **Reporting** | Aggregated pipeline statistics (table + JSON output) |
 | **Doctor** | Read-only health checks with actionable suggestions |
@@ -47,10 +57,11 @@
     │                    event_store                               │
     │                    (audit log)                               │
     │                                                             │
-    ├─── autopilot (multi-cycle controller)                       │
-    ├─── benchmarks (performance measurement)                     │
-    ├─── doctor (health checks)                                   │
-    └─── report (statistics aggregation)                          │
+    ├─── autopilot   (multi-cycle controller)                     │
+    ├─── dashboard   (Streamlit read-only visualisation)          │
+    ├─── benchmarks  (performance measurement)                    │
+    ├─── doctor      (health checks)                              │
+    └─── report      (statistics aggregation)                     │
                                                                   │
     ┌─────────────────────────────────────────────────────────────┐
     │                  nanobot (upstream)                          │
@@ -62,40 +73,52 @@
 
 ```
 Clawland-AI/Geneclaw
-├── geneclaw/                  # GEP v0 evolution engine
-│   ├── __init__.py            # Package metadata (v0.1.0)
-│   ├── models.py              # RunEvent, EvolutionProposal, EvoEvent
-│   ├── redact.py              # Secret redaction (regex-based)
-│   ├── recorder.py            # JSONL run event recorder
-│   ├── evolver.py             # Heuristic + LLM proposal generator
-│   ├── gatekeeper.py          # Safety validation (5 checks)
-│   ├── apply.py               # Git-branched diff application
-│   ├── event_store.py         # Append-only evolution event log
-│   ├── report.py              # Statistics aggregation
-│   ├── doctor.py              # Health checks
-│   ├── autopilot.py           # Multi-cycle evolution controller
-│   ├── benchmarks.py          # Pipeline performance benchmarks
-│   └── cli.py                 # Typer CLI subcommands
-├── nanobot/                   # Upstream agent framework (HKUDS/nanobot)
-│   ├── agent/                 # Core agent loop + tools
-│   ├── channels/              # Chat platform integrations
-│   ├── providers/             # LLM providers
-│   ├── config/                # Configuration schema
-│   └── cli/                   # Main CLI entry point
-├── tests/
+├── geneclaw/                      # GEP v0 evolution engine
+│   ├── __init__.py                # Package metadata (v0.1.0)
+│   ├── models.py                  # RunEvent, EvolutionProposal, EvoEvent
+│   ├── redact.py                  # Secret redaction (regex-based)
+│   ├── recorder.py                # JSONL run event recorder
+│   ├── evolver.py                 # Heuristic + LLM proposal generator
+│   ├── gatekeeper.py              # Safety validation (5 checks)
+│   ├── apply.py                   # Git-branched diff application
+│   ├── event_store.py             # Append-only evolution event log
+│   ├── report.py                  # Statistics aggregation
+│   ├── doctor.py                  # Health checks
+│   ├── autopilot.py               # Multi-cycle evolution controller
+│   ├── benchmarks.py              # Pipeline performance benchmarks
+│   ├── cli.py                     # Typer CLI subcommands
+│   └── dashboard/                 # Streamlit dashboard (read-only)
+│       ├── app.py                 # Streamlit entry point
+│       ├── loader.py              # Data loading, filtering, redaction
+│       └── views/                 # Overview, Timeline, Audit, Benchmarks
+├── nanobot/                       # Upstream agent framework (HKUDS/nanobot)
+│   ├── agent/                     # Core agent loop + tools
+│   ├── channels/                  # Chat platform integrations
+│   ├── providers/                 # LLM providers
+│   ├── config/                    # Configuration schema
+│   └── cli/                       # Main CLI entry point
+├── tests/                         # 123 tests across 8 files
 │   ├── test_geneclaw_recorder.py
 │   ├── test_geneclaw_evolver.py
 │   ├── test_geneclaw_gatekeeper.py
 │   ├── test_geneclaw_doctor.py
 │   ├── test_geneclaw_events.py
-│   └── test_geneclaw_autopilot.py
+│   ├── test_geneclaw_autopilot.py
+│   └── test_geneclaw_dashboard.py
 ├── docs/
-│   ├── specs/GEP-v0.md        # Protocol specification
+│   ├── specs/GEP-v0.md            # Protocol specification
 │   ├── quickstart/Geneclaw-Runbook.md
-│   ├── ops/first-live-run-*.md # Audit records
-│   └── devlog/                 # Daily development logs
+│   ├── ops/
+│   │   ├── github-governance.md   # Branch protection & PR checklist
+│   │   ├── release-runbook.md     # Tagging & release process
+│   │   ├── llm-provider-setup.md  # Secure LLM provider configuration
+│   │   ├── first-real-proposal.md # Guide: first non-no-op proposal
+│   │   ├── upstream-sync.md       # Upstream merge strategy
+│   │   ├── dashboard-runbook.md   # Dashboard operations
+│   │   └── first-live-run-*.md    # Audit records
+│   └── devlog/                    # Daily development logs
 └── .github/
-    ├── workflows/ci.yml        # CI pipeline
+    ├── workflows/ci.yml           # CI pipeline
     └── pull_request_template.md
 ```
 
@@ -107,6 +130,12 @@ Clawland-AI/Geneclaw
 git clone https://github.com/Clawland-AI/Geneclaw.git
 cd Geneclaw
 pip install -e ".[dev]"
+```
+
+**With Dashboard support**
+
+```bash
+pip install -e ".[dev,dashboard]"
 ```
 
 **Add upstream remote** (for syncing with nanobot)
@@ -164,6 +193,13 @@ nanobot geneclaw evolve --dry-run
 nanobot geneclaw report
 ```
 
+### 7. Launch Dashboard
+
+```bash
+nanobot geneclaw dashboard
+# opens http://localhost:8501
+```
+
 ## CLI Reference
 
 All commands are under `nanobot geneclaw`:
@@ -179,6 +215,8 @@ All commands are under `nanobot geneclaw`:
 | `nanobot geneclaw report --format json` | Pipeline statistics (JSON) |
 | `nanobot geneclaw autopilot` | Multi-cycle evolution loop |
 | `nanobot geneclaw benchmark` | Pipeline performance benchmarks |
+| `nanobot geneclaw benchmark --save` | Run benchmarks and persist results to JSONL |
+| `nanobot geneclaw dashboard` | Launch Streamlit dashboard (read-only) |
 
 ### Autopilot Options
 
@@ -206,8 +244,20 @@ nanobot geneclaw autopilot \
 nanobot geneclaw benchmark \
   --event-counts 100,500,1000 \
   --gate-iterations 100 \
+  --save \
   --format table
 ```
+
+### Dashboard Options
+
+```bash
+nanobot geneclaw dashboard \
+  --port 8501 \
+  --events /path/to/events.jsonl \
+  --benchmarks /path/to/benchmarks.jsonl
+```
+
+The dashboard provides four read-only views: **Overview** (KPIs, risk distribution), **Event Timeline** (charts with time filters), **Proposal Audit** (per-proposal metadata inspection), and **Benchmarks** (performance trends).
 
 ## Configuration
 
@@ -252,7 +302,7 @@ Every proposal must pass all five checks before application:
 
 ### 4. Secret Redaction
 
-All event logs (run events + evolution events) pass through regex-based redaction before being written to disk. Patterns include API keys, tokens, passwords, PEM blocks, and Bearer tokens.
+All event logs (run events + evolution events) pass through regex-based redaction before being written to disk. Patterns include API keys, tokens, passwords, PEM blocks, and Bearer tokens. The dashboard re-applies redaction at the display layer.
 
 ### 5. Recommended Allowlist Strategy
 
@@ -287,8 +337,10 @@ All runtime data lives under the nanobot workspace (`~/.nanobot/workspace/`):
 │       └── YYYYMMDD.jsonl
 ├── events/                    # Evolution lifecycle events
 │   └── events.jsonl
-└── proposals/                 # Generated proposals
-    └── proposal_YYYYMMDD_HHMMSS.json
+├── proposals/                 # Generated proposals
+│   └── proposal_YYYYMMDD_HHMMSS.json
+└── benchmarks/                # Performance benchmark results
+    └── benchmarks.jsonl
 ```
 
 ## Testing
@@ -301,7 +353,7 @@ pytest tests/test_geneclaw_*.py -q
 pytest -q
 ```
 
-Current test coverage: **54 tests** across 6 test files.
+Current test coverage: **123 tests** across 8 test files.
 
 ## Development
 
@@ -312,6 +364,8 @@ git fetch upstream
 git merge upstream/main --no-edit
 # resolve conflicts if any
 ```
+
+See [docs/ops/upstream-sync.md](docs/ops/upstream-sync.md) for the complete strategy.
 
 ### Branch Naming
 
@@ -332,17 +386,27 @@ Risk-Level: low
 Tests: pytest tests/test_geneclaw_autopilot.py -q
 ```
 
-## Specifications
+## Documentation
 
-- [GEP v0 Protocol Specification](docs/specs/GEP-v0.md)
-- [Operator Runbook](docs/quickstart/Geneclaw-Runbook.md)
-- [First Live Run Audit](docs/ops/first-live-run-2026-02-18.md)
-- [Development Log](docs/devlog/2026-02-18.md)
+| Document | Description |
+|----------|-------------|
+| [GEP v0 Protocol Specification](docs/specs/GEP-v0.md) | Core protocol design |
+| [Operator Runbook](docs/quickstart/Geneclaw-Runbook.md) | Day-to-day operations guide |
+| [Dashboard Runbook](docs/ops/dashboard-runbook.md) | Dashboard setup & usage |
+| [GitHub Governance](docs/ops/github-governance.md) | Branch protection & PR review |
+| [Release Runbook](docs/ops/release-runbook.md) | Tagging, releases, rollback |
+| [LLM Provider Setup](docs/ops/llm-provider-setup.md) | Secure API key configuration |
+| [First Real Proposal](docs/ops/first-real-proposal.md) | Generating your first proposal |
+| [Upstream Sync](docs/ops/upstream-sync.md) | Merge strategy for HKUDS/nanobot |
+| [First Live Run Audit](docs/ops/first-live-run-2026-02-18.md) | Audit trail |
+| [Changelog](CHANGELOG.md) | Release history |
+| [Development Log](docs/devlog/2026-02-18.md) | Daily engineering notes |
 
 ## Repository
 
 | | |
 |-|-|
+| **Website** | [geneclaw.ai](https://geneclaw.ai) |
 | **Origin** | [Clawland-AI/Geneclaw](https://github.com/Clawland-AI/Geneclaw) |
 | **Upstream** | [HKUDS/nanobot](https://github.com/HKUDS/nanobot) |
 | **Organization** | [Clawland-AI](https://github.com/Clawland-AI) |
@@ -352,5 +416,5 @@ Tests: pytest tests/test_geneclaw_autopilot.py -q
 MIT — see [LICENSE](LICENSE).
 
 <p align="center">
-  <sub>Geneclaw is built by <a href="https://github.com/Clawland-AI">Clawland-AI</a> on top of <a href="https://github.com/HKUDS/nanobot">HKUDS/nanobot</a></sub>
+  <sub>Built by <a href="https://github.com/Clawland-AI">Clawland-AI</a> · Powered by <a href="https://github.com/HKUDS/nanobot">HKUDS/nanobot</a> · <a href="https://geneclaw.ai">geneclaw.ai</a></sub>
 </p>
