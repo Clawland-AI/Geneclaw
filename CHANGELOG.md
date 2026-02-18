@@ -76,8 +76,32 @@ Upstream: [HKUDS/nanobot](https://github.com/HKUDS/nanobot)
   - Event store write/read throughput
 - CLI commands: `autopilot`, `benchmark` (both with `--format json`)
 
+#### M6 — Go-Live Governance & Real Evolution
+- `docs/ops/github-governance.md` — Branch protection, required status checks, PR review checklist, autopilot governance rules
+- `CHANGELOG.md` — Initial v0.1.0 entry
+- `docs/ops/release-runbook.md` — Tag, release, verification, rollback procedures
+- `docs/ops/llm-provider-setup.md` — Secure LLM API key configuration via environment variables
+- `docs/ops/first-real-proposal.md` — Step-by-step guide for generating the first non-no-op proposal
+- `docs/ops/upstream-sync.md` — Upstream merge strategy, conflict resolution, post-merge regression checks
+
+#### M7 — Dashboard v0 (Local Read-Only Visualisation)
+- `geneclaw/dashboard/` — Streamlit-based read-only dashboard:
+  - **Overview:** KPI cards, risk distribution, top files touched, recent events
+  - **Event Timeline:** Hourly/daily bar charts with risk-level filtering
+  - **Proposal Audit:** Per-proposal metadata inspection (objective, files, tests, rollback plan)
+  - **Benchmarks:** Performance trend charts, stage breakdown, raw data tables
+- `geneclaw/dashboard/loader.py` — JSONL data loading, time filtering, secret redaction
+- `EvoEvent` model enhanced with `title`, `objective`, `rollback_plan` fields (backward compatible)
+- `BenchmarkResult` enhanced with `timestamp` field
+- `benchmark --save` CLI flag to persist results to JSONL
+- `nanobot geneclaw dashboard` CLI command
+- `docs/ops/dashboard-runbook.md` — Dashboard operations guide
+
+#### Website
+- Official website launched at [geneclaw.ai](https://geneclaw.ai)
+
 ### Testing
-- 54 geneclaw-specific tests across 6 test files
+- 123 tests across 8 test files
 - All tests passing on Python 3.11+
 
 ### Security
