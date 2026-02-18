@@ -36,9 +36,13 @@ class BenchmarkResult:
     event_count: int = 0
     stages: list[StageTiming] = field(default_factory=list)
     total_duration_ms: float = 0.0
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "timestamp": self.timestamp,
             "event_count": self.event_count,
             "total_duration_ms": round(self.total_duration_ms, 2),
             "stages": [

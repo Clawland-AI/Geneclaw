@@ -50,6 +50,11 @@ dev = [
     "pytest-asyncio>=0.21.0",
     "ruff>=0.1.0",
 ]
+dashboard = [
+    "streamlit>=1.30.0",
+    "plotly>=5.18.0",
+    "pandas>=2.1.0",
+]
 
 [project.scripts]
 nanobot = "nanobot.cli.commands:app"

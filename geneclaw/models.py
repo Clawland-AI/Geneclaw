@@ -70,3 +70,6 @@ class EvoEvent(BaseModel):
     tests_to_run: list[str] = Field(default_factory=list)
     parent_event_id: str = ""
     result: str = ""
+    title: str = ""
+    objective: str = ""
+    rollback_plan: str = ""

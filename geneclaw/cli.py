@@ -192,7 +192,6 @@ def evolve(
         if diff_line_count:
             console.print(f"  Diff lines: {diff_line_count}")
 
-        # Record evolve_generated event
         evolve_event = EvoEvent(
             event_type="evolve_generated",
             proposal_id=proposal.id,
@@ -201,6 +200,9 @@ def evolve(
             diff_lines=diff_line_count,
             tests_to_run=proposal.tests_to_run,
             result="ok",
+            title=proposal.title,
+            objective=proposal.objective,
+            rollback_plan=proposal.rollback_plan,
         )
         store.record(evolve_event)
 
@@ -298,13 +300,15 @@ def apply_cmd(
     store = EventStore(config.workspace_path, redact=gc.redact_enabled)
     diff_line_count = len(proposal.unified_diff.splitlines()) if proposal.unified_diff else 0
 
-    # Record apply_attempted
     attempt_event = EvoEvent(
         event_type="apply_attempted",
         proposal_id=proposal.id,
         risk_level=proposal.risk_level,
         files_touched=proposal.files_touched,
         diff_lines=diff_line_count,
+        title=proposal.title,
+        objective=proposal.objective,
+        rollback_plan=proposal.rollback_plan,
     )
     store.record(attempt_event)
 
@@ -317,7 +321,6 @@ def apply_cmd(
         dry_run=not apply_mode,
     )
 
-    # Record result
     result_event = EvoEvent(
         event_type="apply_succeeded" if success else "apply_failed",
         proposal_id=proposal.id,
@@ -326,6 +329,8 @@ def apply_cmd(
         diff_lines=diff_line_count,
         parent_event_id=attempt_event.event_id,
         result=f"{'ok' if success else 'fail'}: {msg[:200]}",
+        title=proposal.title,
+        rollback_plan=proposal.rollback_plan,
     )
     store.record(result_event)
 
@@ -521,6 +526,7 @@ def benchmark(
     event_counts: str = typer.Option("100,500,1000", "--event-counts", help="Comma-separated event counts"),
     gate_iterations: int = typer.Option(100, "--gate-iterations", help="Gatekeeper validation iterations"),
     fmt: str = typer.Option("table", "--format", help="Output format: table or json"),
+    save: bool = typer.Option(False, "--save", help="Append JSONL result to geneclaw/benchmarks/benchmarks.jsonl"),
 ) -> None:
     """Run pipeline performance benchmarks with synthetic data."""
     from geneclaw.benchmarks import run_benchmarks
@@ -536,6 +542,16 @@ def benchmark(
         event_counts=counts,
         gate_iterations=gate_iterations,
     )
+
+    if save:
+        from nanobot.config.loader import load_config
+        ws = load_config().workspace_path
+        bench_dir = ws / "geneclaw" / "benchmarks"
+        bench_dir.mkdir(parents=True, exist_ok=True)
+        bench_file = bench_dir / "benchmarks.jsonl"
+        with bench_file.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(result.to_dict()) + "\n")
+        console.print(f"[green]Result appended to {bench_file}[/green]")
 
     if fmt == "json":
         console.print(json.dumps(result.to_dict(), indent=2))
@@ -558,3 +574,55 @@ def benchmark(
 
     console.print(table)
     console.print(f"\n  Total benchmark time: {result.total_duration_ms:.0f}ms")
+
+
+# ---------------------------------------------------------------------------
+# dashboard
+# ---------------------------------------------------------------------------
+
+
+@geneclaw_app.command("dashboard")
+def dashboard(
+    port: int = typer.Option(8501, "--port", help="Streamlit server port"),
+    events_file: str = typer.Option(None, "--events", help="Path to events.jsonl"),
+    benchmarks_file: str = typer.Option(None, "--benchmarks", help="Path to benchmarks.jsonl"),
+) -> None:
+    """Launch the Geneclaw read-only Streamlit dashboard."""
+    import subprocess
+
+    try:
+        import streamlit  # noqa: F401
+    except ImportError:
+        console.print(
+            "[red]Streamlit not installed. Install with:[/red]\n"
+            "  pip install 'nanobot-ai[dashboard]'  # or pip install streamlit plotly pandas"
+        )
+        raise typer.Exit(1)
+
+    from nanobot.config.loader import load_config
+
+    ws = load_config().workspace_path
+    app_path = Path(__file__).parent / "dashboard" / "app.py"
+    if not app_path.exists():
+        console.print(f"[red]Dashboard app not found at {app_path}[/red]")
+        raise typer.Exit(1)
+
+    env_vars = {
+        "GENECLAW_WORKSPACE": str(ws),
+    }
+    if events_file:
+        env_vars["GENECLAW_EVENTS_FILE"] = events_file
+    if benchmarks_file:
+        env_vars["GENECLAW_BENCHMARKS_FILE"] = benchmarks_file
+
+    import os
+    env = {**os.environ, **env_vars}
+
+    console.print(f"[bold]Launching Geneclaw Dashboard[/bold] at http://localhost:{port}")
+    console.print("[dim]Press Ctrl+C to stop.[/dim]\n")
+
+    subprocess.run(
+        [sys.executable, "-m", "streamlit", "run", str(app_path),
+         "--server.port", str(port), "--server.headless", "true"],
+        env=env,
+    )
